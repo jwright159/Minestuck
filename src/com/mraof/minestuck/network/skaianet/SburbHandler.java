@@ -27,6 +27,8 @@ import com.mraof.minestuck.entity.underling.EntityImp;
 import com.mraof.minestuck.entity.underling.EntityLich;
 import com.mraof.minestuck.entity.underling.EntityOgre;
 import com.mraof.minestuck.entity.underling.EntityUnderling;
+import com.mraof.minestuck.event.GenerateLandTerrainEvent;
+import com.mraof.minestuck.event.GenerateLandTitleEvent;
 import com.mraof.minestuck.item.ItemCruxiteArtifact;
 import com.mraof.minestuck.item.MinestuckItems;
 import com.mraof.minestuck.network.MinestuckChannelHandler;
@@ -66,6 +68,7 @@ import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome.SpawnListEntry;
+import net.minecraftforge.common.MinecraftForge;
 
 /**
  * A class for managing sbrub-related stuff from outside this package that is dependent on connections and sessions.
@@ -620,11 +623,25 @@ public class SburbHandler
 					frogs = true;
 			}
 		}
-		
+
 		if(titleAspect == null)
+		{
+			GenerateLandTitleEvent landTitleEvent = new GenerateLandTitleEvent(connection);
+			if (!MinecraftForge.EVENT_BUS.post(landTitleEvent))
+				titleAspect = landTitleEvent.getLandTitle();
+		}
+		if (titleAspect == null)
 			titleAspect = aspectGen.getTitleAspect(terrainAspect, title.getHeroAspect(), usedTitleAspects);
+
+		if(terrainAspect == null)
+		{
+			GenerateLandTerrainEvent landTerrainEvent = new GenerateLandTerrainEvent(connection);
+			if (!MinecraftForge.EVENT_BUS.post(landTerrainEvent))
+				terrainAspect = landTerrainEvent.getLandTerrain();
+		}
 		if(terrainAspect == null)
 			terrainAspect = aspectGen.getTerrainAspect(titleAspect, usedTerrainAspects);
+
 		MinestuckDimensionHandler.registerLandDimension(connection.clientHomeLand, new AspectCombination(terrainAspect, titleAspect));
 	}
 	
