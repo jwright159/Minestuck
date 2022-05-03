@@ -19,24 +19,23 @@ buildscript {
 repositories {
     maven {
         name = "chickenbones"
-        url = "http://chickenbones.net/maven/"
+        url = "https://chickenbones.net/maven/"
     }
     maven {
         name = "Progwml6 maven"
-        url = "http://dvs1.progwml6.com/files/maven/"
+        url = "https://dvs1.progwml6.com/files/maven/"
     }
     maven {
-        url = "http://maven.blamejared.com"
+        url = "https://maven.blamejared.com/"
     }
     maven {
         // location of a maven mirror for JEI files, as a fallback
         name = "ModMaven"
-        url = "modmaven.k-4u.nl"
+        url = "https://modmaven.k-4u.nl/"
     }
     maven {
-        // Refined Storage
-        name "Raoulvdberge Repo"
-        url "https://repo.refinedmods.com/"
+        name = "CurseMaven"
+        url = "https://cursemaven.com/"
     }
 }
 
@@ -75,7 +74,7 @@ dependencies {
     deobfCompile "mezz.jei:jei_${mc_version}:${jei_version}:api"
     runtime "mezz.jei:jei_${mc_version}:${jei_version}"
     deobfCompile "CraftTweaker2:CraftTweaker2-API:4.1.6.457"
-    deobfCompile "refinedstorage:refinedstorage:${rs_version}:api"
+    deobfCompile "curse.maven:refinedstorage-243076:2642249" // refinedstorage file for 1.6.12
 }
 
 sourceSets {
