@@ -179,8 +179,7 @@ public class CaptchaDeckHandler
 				&& modus != null)
 		{
 			ItemStack content = AlchemyRecipes.getDecodedItem(item, true);
-			
-			System.out.println(content);
+
 			int failed = 0;
 			for(int i = 0; i < item.getCount(); i++)
 				if(!modus.increaseSize())
@@ -261,7 +260,6 @@ public class CaptchaDeckHandler
 	public static void captchalougeInventoryItem (EntityPlayerMP player, int slotIndex) {
 		ItemStack stack;
 		Modus modus = getModus(player);
-		System.out.println("Raw Slot: " + slotIndex);
 		//This statement is so that the server knows whether the item is in the hotbar or not because apparently THE "openContainer" CANT EDIT THE HOTBAR SLOTS.
 		if(player.openContainer.equals(player.inventoryContainer) && player.inventory.isHotbar(slotIndex)) {
 			int hotbarIndex = slotIndex;
