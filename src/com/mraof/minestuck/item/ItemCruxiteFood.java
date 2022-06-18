@@ -73,4 +73,9 @@ public class ItemCruxiteFood extends Item implements ICruxiteArtifact
 		playerIn.setActiveHand(handIn);
 		return new ActionResult<>(EnumActionResult.SUCCESS, playerIn.getHeldItem(handIn));
 	}
+
+	@Override
+	public int getMaxItemUseDuration(ItemStack stack) {
+		return 32;
+	}
 }
