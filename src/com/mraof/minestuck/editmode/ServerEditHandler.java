@@ -147,8 +147,6 @@ public class ServerEditHandler
 	
 	public static void newServerEditor(EntityPlayerMP player, PlayerIdentifier computerOwner, PlayerIdentifier computerTarget)
 	{
-		if(player.isRiding())
-			return;
 		SburbConnection c = SkaianetHandler.getClientConnection(computerTarget);
 		if(c != null && c.getServerIdentifier().equals(computerOwner) && getData(c) == null && getData(player) == null)
 		{
