@@ -3,6 +3,7 @@ package com.mraof.minestuck.editmode;
 import com.mraof.minestuck.MinestuckConfig;
 import com.mraof.minestuck.alchemy.*;
 import com.mraof.minestuck.entity.EntityDecoy;
+import com.mraof.minestuck.event.GetDeployListEvent;
 import com.mraof.minestuck.network.MinestuckChannelHandler;
 import com.mraof.minestuck.network.MinestuckPacket;
 import com.mraof.minestuck.network.MinestuckPacket.Type;
@@ -38,6 +39,7 @@ import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.GameType;
 import net.minecraft.world.WorldServer;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.CommandEvent;
 import net.minecraftforge.event.entity.EntityTravelToDimensionEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
@@ -482,7 +484,9 @@ public class ServerEditHandler
 		deployList.removeIf(entry -> givenItems[DeployList.getOrdinal(entry.getName())] && entry.getSecondaryGristCost(connection) == null);
 		List<ItemStack> itemList = new ArrayList<>();
 		deployList.forEach(deployEntry -> itemList.add(deployEntry.getItemStack(connection)));
-		
+
+		MinecraftForge.EVENT_BUS.post(new GetDeployListEvent(player, connection, itemList));
+
 		boolean inventoryChanged = false;
 		for(int i = 0; i < player.inventory.mainInventory.size(); i++)
 		{

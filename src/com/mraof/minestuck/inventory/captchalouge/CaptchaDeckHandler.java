@@ -4,6 +4,8 @@ import com.mraof.minestuck.Minestuck;
 import com.mraof.minestuck.MinestuckConfig;
 import com.mraof.minestuck.advancements.MinestuckCriteriaTriggers;
 import com.mraof.minestuck.client.ClientProxy;
+import com.mraof.minestuck.event.CaptchalogueEvent;
+import com.mraof.minestuck.event.DropSylladexEvent;
 import com.mraof.minestuck.item.ItemBoondollars;
 import com.mraof.minestuck.item.MinestuckItems;
 import com.mraof.minestuck.network.CaptchaDeckPacket;
@@ -13,11 +15,9 @@ import com.mraof.minestuck.alchemy.AlchemyRecipes;
 import com.mraof.minestuck.util.Debug;
 import com.mraof.minestuck.util.MinestuckPlayerData;
 
-import net.minecraft.client.gui.inventory.GuiContainerCreative;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -25,6 +25,7 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -220,39 +221,40 @@ public class CaptchaDeckHandler
 		
 		if(modus != null && !stack.isEmpty())
 		{
-			boolean card1 = false, card2 = true;
-			if(stack.getItem() == MinestuckItems.captchaCard && AlchemyRecipes.hasDecodedItem(stack)
-					&& !AlchemyRecipes.isPunchedCard(stack))
-			{
-				ItemStack newStack = AlchemyRecipes.getDecodedItem(stack, true);
-				if(!newStack.isEmpty())
-				{
-					card1 = true;
-					stack = newStack;
-					card2 = modus.increaseSize();
+
+			CaptchalogueEvent event = new CaptchalogueEvent(player, stack.getItem() == MinestuckItems.captchaCard && AlchemyRecipes.hasDecodedItem(stack) &&
+					!AlchemyRecipes.isPunchedCard(stack) ? AlchemyRecipes.getDecodedItem(stack) : stack);
+			stack = event.getStack();
+			if(!MinecraftForge.EVENT_BUS.post(event)) {
+				boolean card1 = false, card2 = true;
+				if (stack.getItem() == MinestuckItems.captchaCard && AlchemyRecipes.hasDecodedItem(stack)
+						&& !AlchemyRecipes.isPunchedCard(stack)) {
+					ItemStack newStack = AlchemyRecipes.getDecodedItem(stack, true);
+					if (!newStack.isEmpty()) {
+						card1 = true;
+						stack = newStack;
+						card2 = modus.increaseSize();
+					}
 				}
+				if (modus.putItemStack(stack)) {
+					MinestuckCriteriaTriggers.CAPTCHALOGUE.trigger(player, modus, stack);
+					if (!card2)
+						launchAnyItem(player, new ItemStack(MinestuckItems.captchaCard, 1));
+
+					stack = player.getHeldItemMainhand();
+					if (card1 && stack.getCount() > 1)
+						stack.shrink(1);
+					else player.setHeldItem(EnumHand.MAIN_HAND, ItemStack.EMPTY);
+				} else if (card1 && card2) {
+					launchAnyItem(player, stack);
+					stack = player.getHeldItemMainhand();
+					if (stack.getCount() == 1)
+						player.setHeldItem(EnumHand.MAIN_HAND, ItemStack.EMPTY);
+					else stack.shrink(1);
+				}
+				MinestuckPacket packet = MinestuckPacket.makePacket(MinestuckPacket.Type.CAPTCHA, CaptchaDeckPacket.DATA, writeToNBT(modus));
+				MinestuckChannelHandler.sendToPlayer(packet, player);
 			}
-			if(modus.putItemStack(stack))
-			{
-				MinestuckCriteriaTriggers.CAPTCHALOGUE.trigger(player, modus, stack);
-				if(!card2)
-					launchAnyItem(player, new ItemStack(MinestuckItems.captchaCard, 1));
-				
-				stack = player.getHeldItemMainhand();
-				if(card1 && stack.getCount() > 1)
-					stack.shrink(1);
-				else player.setHeldItem(EnumHand.MAIN_HAND, ItemStack.EMPTY);
-			}
-			else if(card1 && card2)
-			{
-				launchAnyItem(player, stack);
-				stack = player.getHeldItemMainhand();
-				if(stack.getCount() == 1)
-					player.setHeldItem(EnumHand.MAIN_HAND, ItemStack.EMPTY);
-				else stack.shrink(1);
-			}
-			MinestuckPacket packet = MinestuckPacket.makePacket(MinestuckPacket.Type.CAPTCHA, CaptchaDeckPacket.DATA, writeToNBT(modus));
-			MinestuckChannelHandler.sendToPlayer(packet, player);
 		}
 		
 	}
@@ -275,40 +277,43 @@ public class CaptchaDeckHandler
 
 			if(modus != null && !stack.isEmpty())
 			{
-				boolean card1 = false, card2 = true;
-				if(stack.getItem() == MinestuckItems.captchaCard && AlchemyRecipes.hasDecodedItem(stack)
-						&& !AlchemyRecipes.isPunchedCard(stack))
+				CaptchalogueEvent event = new CaptchalogueEvent.Inventory(player, stack.getItem() == MinestuckItems.captchaCard && AlchemyRecipes.hasDecodedItem(stack) &&
+						!AlchemyRecipes.isPunchedCard(stack) ? AlchemyRecipes.getDecodedItem(stack) : stack);
+				stack = event.getStack();
+				if(!MinecraftForge.EVENT_BUS.post(event))
 				{
-					ItemStack newStack = AlchemyRecipes.getDecodedItem(stack, true);
-					if(!newStack.isEmpty())
-					{
-						card1 = true;
-						stack = newStack;
-						card2 = modus.increaseSize();
+					boolean card1 = false, card2 = true;
+					if (stack.getItem() == MinestuckItems.captchaCard && AlchemyRecipes.hasDecodedItem(stack)
+							&& !AlchemyRecipes.isPunchedCard(stack)) {
+						ItemStack newStack = AlchemyRecipes.getDecodedItem(stack, true);
+						if (!newStack.isEmpty()) {
+							card1 = true;
+							stack = newStack;
+							card2 = modus.increaseSize();
+						}
 					}
-				}
-				if(modus.putItemStack(stack))
-				{
-					MinestuckCriteriaTriggers.CAPTCHALOGUE.trigger(player, modus, stack);
-					if(!card2)
-						launchAnyItem(player, new ItemStack(MinestuckItems.captchaCard, 1));
-					stack = player.inventory.mainInventory.get(hotbarIndex);
-					if(card1 && stack.getCount() > 1)
-						stack.shrink(1);
-					else {
-						player.inventory.setInventorySlotContents(hotbarIndex, ItemStack.EMPTY);
+
+					if (modus.putItemStack(stack)) {
+						MinestuckCriteriaTriggers.CAPTCHALOGUE.trigger(player, modus, stack);
+						if (!card2)
+							launchAnyItem(player, new ItemStack(MinestuckItems.captchaCard, 1));
+						stack = player.inventory.mainInventory.get(hotbarIndex);
+						if (card1 && stack.getCount() > 1)
+							stack.shrink(1);
+						else {
+							player.inventory.setInventorySlotContents(hotbarIndex, ItemStack.EMPTY);
+						}
+					} else if (card1 && card2) {
+						launchAnyItem(player, stack);
+						stack = player.inventory.mainInventory.get(hotbarIndex);
+						if (stack.getCount() == 1) {
+							player.inventory.setInventorySlotContents(hotbarIndex, ItemStack.EMPTY);
+						} else stack.shrink(1);
 					}
+					MinestuckPacket packet = MinestuckPacket.makePacket(MinestuckPacket.Type.CAPTCHA, CaptchaDeckPacket.DATA, writeToNBT(modus));
+					MinestuckChannelHandler.sendToPlayer(packet, player);
 				}
-				else if(card1 && card2)
-				{
-					launchAnyItem(player, stack);
-					stack = player.inventory.mainInventory.get(hotbarIndex);
-					if(stack.getCount() == 1) {
-						player.inventory.setInventorySlotContents(hotbarIndex, ItemStack.EMPTY);
-					} else stack.shrink(1);
-				}
-				MinestuckPacket packet = MinestuckPacket.makePacket(MinestuckPacket.Type.CAPTCHA, CaptchaDeckPacket.DATA, writeToNBT(modus));
-				MinestuckChannelHandler.sendToPlayer(packet, player);
+
 			}
 		}
 		else {
@@ -324,40 +329,40 @@ public class CaptchaDeckHandler
 
 			if(modus != null && !stack.isEmpty())
 			{
-				boolean card1 = false, card2 = true;
-				if(stack.getItem() == MinestuckItems.captchaCard && AlchemyRecipes.hasDecodedItem(stack)
-						&& !AlchemyRecipes.isPunchedCard(stack))
-				{
-					ItemStack newStack = AlchemyRecipes.getDecodedItem(stack, true);
-					if(!newStack.isEmpty())
-					{
-						card1 = true;
-						stack = newStack;
-						card2 = modus.increaseSize();
+				CaptchalogueEvent event = new CaptchalogueEvent.Inventory(player, stack.getItem() == MinestuckItems.captchaCard && AlchemyRecipes.hasDecodedItem(stack) &&
+						!AlchemyRecipes.isPunchedCard(stack) ? AlchemyRecipes.getDecodedItem(stack) : stack);
+				stack = event.getStack();
+				if(!MinecraftForge.EVENT_BUS.post(event)) {
+					boolean card1 = false, card2 = true;
+					if (stack.getItem() == MinestuckItems.captchaCard && AlchemyRecipes.hasDecodedItem(stack)
+							&& !AlchemyRecipes.isPunchedCard(stack)) {
+						ItemStack newStack = AlchemyRecipes.getDecodedItem(stack, true);
+						if (!newStack.isEmpty()) {
+							card1 = true;
+							stack = newStack;
+							card2 = modus.increaseSize();
+						}
 					}
-				}
-				if(modus.putItemStack(stack))
-				{
-					MinestuckCriteriaTriggers.CAPTCHALOGUE.trigger(player, modus, stack);
-					if(!card2)
-						launchAnyItem(player, new ItemStack(MinestuckItems.captchaCard, 1));
-					stack = slot.getStack();
-					if(card1 && stack.getCount() > 1)
-						stack.shrink(1);
-					else {
-						slot.putStack(ItemStack.EMPTY);
+					if (modus.putItemStack(stack)) {
+						MinestuckCriteriaTriggers.CAPTCHALOGUE.trigger(player, modus, stack);
+						if (!card2)
+							launchAnyItem(player, new ItemStack(MinestuckItems.captchaCard, 1));
+						stack = slot.getStack();
+						if (card1 && stack.getCount() > 1)
+							stack.shrink(1);
+						else {
+							slot.putStack(ItemStack.EMPTY);
+						}
+					} else if (card1 && card2) {
+						launchAnyItem(player, stack);
+						stack = slot.getStack();
+						if (stack.getCount() == 1) {
+							slot.putStack(ItemStack.EMPTY);
+						} else stack.shrink(1);
 					}
+					MinestuckPacket packet = MinestuckPacket.makePacket(MinestuckPacket.Type.CAPTCHA, CaptchaDeckPacket.DATA, writeToNBT(modus));
+					MinestuckChannelHandler.sendToPlayer(packet, player);
 				}
-				else if(card1 && card2)
-				{
-					launchAnyItem(player, stack);
-					stack = slot.getStack();
-					if(stack.getCount() == 1) {
-						slot.putStack(ItemStack.EMPTY);
-					} else stack.shrink(1);
-				}
-				MinestuckPacket packet = MinestuckPacket.makePacket(MinestuckPacket.Type.CAPTCHA, CaptchaDeckPacket.DATA, writeToNBT(modus));
-				MinestuckChannelHandler.sendToPlayer(packet, player);
 			}
 		}
 	}
@@ -414,7 +419,10 @@ public class CaptchaDeckHandler
 		NonNullList<ItemStack> stacks = modus.getItems();
 		int size = modus.getSize();
 		int cardsToKeep = MinestuckConfig.sylladexDropMode == 2 ? 0 : MinestuckConfig.initialModusSize;
-		
+
+		if(MinecraftForge.EVENT_BUS.post(new DropSylladexEvent(player, modus, stacks)))
+			return;
+
 		if(!MinestuckConfig.dropItemsInCards || MinestuckConfig.sylladexDropMode == 0)
 		{
 			for(ItemStack stack : stacks)
