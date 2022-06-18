@@ -1,12 +1,5 @@
 package com.mraof.minestuck.item;
 
-import static com.mraof.minestuck.MinestuckConfig.artifactRange;
-
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.logging.Logger;
-
 import com.mraof.minestuck.Minestuck;
 import com.mraof.minestuck.MinestuckConfig;
 import com.mraof.minestuck.advancements.MinestuckCriteriaTriggers;
@@ -29,10 +22,6 @@ import com.mraof.minestuck.util.Teleport;
 import com.mraof.minestuck.world.GateHandler;
 import com.mraof.minestuck.world.MinestuckDimensionHandler;
 import com.mraof.minestuck.world.lands.LandAspectRegistry;
-import com.raoulvdberge.refinedstorage.api.network.node.INetworkNode;
-import com.raoulvdberge.refinedstorage.api.network.node.INetworkNodeManager;
-import com.raoulvdberge.refinedstorage.api.network.node.INetworkNodeProxy;
-
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
@@ -41,7 +30,6 @@ import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.AxisAlignedBB;
@@ -56,7 +44,14 @@ import net.minecraft.world.chunk.Chunk.EnumCreateEntityType;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 import net.minecraftforge.fml.common.Loader;
 
-public abstract class ItemCruxiteArtifact extends Item implements Teleport.ITeleporter
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Logger;
+
+import static com.mraof.minestuck.MinestuckConfig.artifactRange;
+
+public class CruxiteArtifactTeleporter implements Teleport.ITeleporter
 {
 	private int xDiff;
 	private int yDiff;
@@ -67,14 +62,6 @@ public abstract class ItemCruxiteArtifact extends Item implements Teleport.ITele
 	private HashSet<BlockMove> blockMoves;
 	
 	private static boolean isRefinedStorageInstalled = Loader.isModLoaded("refinedstorage");
-	
-	public ItemCruxiteArtifact() 
-	{
-		this.setCreativeTab(TabMinestuck.instance);
-		setUnlocalizedName("cruxiteArtifact");
-		this.maxStackSize = 1;
-		setHasSubtypes(true);
-	}
 	
 	public void onArtifactActivated(EntityPlayer player)
 	{
@@ -257,9 +244,9 @@ public abstract class ItemCruxiteArtifact extends Item implements Teleport.ITele
 					tag.setString("responsibleMod", "refinedstorage");
 					tag.setBoolean("newTE", true);
 				}
-				
+
 			}
-			
+
 		}
 		return tag;
 	}
@@ -559,7 +546,7 @@ public abstract class ItemCruxiteArtifact extends Item implements Teleport.ITele
 				chunkTo.getWorld().setBlockState(dest, block, 0);
 			} else
 			{
-				ItemCruxiteArtifact.copyBlockDirect(chunkFrom, chunkTo, source.getX(), source.getY(), source.getZ(), dest.getX(), dest.getY(), dest.getZ());
+				CruxiteArtifactTeleporter.copyBlockDirect(chunkFrom, chunkTo, source.getX(), source.getY(), source.getZ(), dest.getX(), dest.getY(), dest.getZ());
 			}
 			
 			TileEntity tileEntity = chunkFrom.getTileEntity(source, EnumCreateEntityType.CHECK);
@@ -580,18 +567,17 @@ public abstract class ItemCruxiteArtifact extends Item implements Teleport.ITele
 				te1.markDirty();
 			}
 		}
-		
+
 		private void handleExtraData(Chunk chunkTo)
 		{
 			if(extraData == null)    return;
-			
+
 			switch(extraData.getString("responsibleMod"))
 			{
 			case "refinedstorage":
 				if(extraData.getBoolean("newTE"))
 				{
 					//Destroys the newly-copied tile entity, so that a new one will be generated in its place.
-					System.out.println("is Controller"); 
 					chunkTo.removeTileEntity(dest);
 					TileEntity te = chunkFrom.getTileEntity(source,EnumCreateEntityType.CHECK);
 					INetworkNode node = ((INetworkNodeProxy)te).getNode();
@@ -608,8 +594,7 @@ public abstract class ItemCruxiteArtifact extends Item implements Teleport.ITele
 					manager.setNode(dest, node);
 					
 					manager.markForSaving();
-					
-					System.out.println(extraData.getString(RefinedStorageSupport.NBT_NODE_ID));
+
 				}
 				break;
 			default:

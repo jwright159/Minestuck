@@ -29,7 +29,9 @@ import com.mraof.minestuck.entity.underling.EntityOgre;
 import com.mraof.minestuck.entity.underling.EntityUnderling;
 import com.mraof.minestuck.event.GenerateLandTerrainEvent;
 import com.mraof.minestuck.event.GenerateLandTitleEvent;
-import com.mraof.minestuck.item.ItemCruxiteArtifact;
+import com.mraof.minestuck.item.CruxiteArtifactTeleporter;
+import com.mraof.minestuck.item.ICruxiteArtifact;
+import com.mraof.minestuck.item.ItemCruxiteFood;
 import com.mraof.minestuck.item.MinestuckItems;
 import com.mraof.minestuck.network.MinestuckChannelHandler;
 import com.mraof.minestuck.network.MinestuckPacket;
@@ -518,7 +520,13 @@ public class SburbHandler
 		
 		session.locked = true;
 	}
-	
+
+	public static final List<ICruxiteArtifact> CRUXITE_ARTIFACTS = new ArrayList<ICruxiteArtifact>()
+	{{
+		add((ICruxiteArtifact) MinestuckItems.cruxiteApple);
+		add((ICruxiteArtifact) MinestuckItems.cruxitePotion);
+	}};
+
 	/**
 	 * @param player The username of the player, encoded.
 	 * @return Damage value for the entry item
@@ -527,17 +535,8 @@ public class SburbHandler
 	{
 		SburbConnection c = SkaianetHandler.getClientConnection(player); 
 		int colorIndex = MinestuckPlayerData.getData(player).color;
-		Item artifact;
-		if(c == null)
-			artifact = MinestuckItems.cruxiteApple;
-		
-		else switch(c.artifactType)
-		{
-		case 1: artifact = MinestuckItems.cruxitePotion; break;
-		default: artifact = MinestuckItems.cruxiteApple;
-		}
-		
-		return new ItemStack(artifact, 1, colorIndex + 1);
+
+		return CRUXITE_ARTIFACTS.get(c == null || c.artifactType >= CRUXITE_ARTIFACTS.size() || c.artifactType < 0 ? 0 : c.artifactType).getStack(colorIndex).copy();
 	}
 	
 	public static GristType getPrimaryGristType(PlayerIdentifier player)
@@ -815,7 +814,7 @@ public class SburbHandler
 			Vec3d pos = titleSelectionMap.remove(player);
 			
 			player.setPosition(pos.x, pos.y, pos.z);
-			((ItemCruxiteArtifact) MinestuckItems.cruxiteApple).onArtifactActivated(player);
+			((ItemCruxiteFood) MinestuckItems.cruxiteApple).getTeleporter().onArtifactActivated(player);
 			
 		} else Debug.warnf("%s tried to select a title without entering.", player.getName());
 	}
